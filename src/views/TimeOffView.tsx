@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { TimeOffCard } from '../components/TimeOffCard';
 import { useSession } from '../state/SessionContext';
 import { useShifts } from '../state/ShiftsContext';
+import { useToast } from '../state/ToastContext';
 import { timeOffForUser } from '../state/selectors';
 
 function todayYmd(): string {
@@ -24,6 +25,7 @@ function generateId(): string {
 export function TimeOffView() {
   const { state, dispatch } = useShifts();
   const { currentUserId } = useSession();
+  const { showToast } = useToast();
   const requests = timeOffForUser(state, currentUserId);
 
   const [open, setOpen] = useState(false);
@@ -67,6 +69,7 @@ export function TimeOffView() {
       endDate,
       reason,
     });
+    showToast('Request sent to your manager', 'success');
     close();
   };
 
@@ -74,7 +77,7 @@ export function TimeOffView() {
     <div className="flex flex-col gap-4 px-4 pt-4 pb-28">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-2xl font-bold text-slate-900">Time Off</div>
+          <h1 className="text-2xl font-bold text-slate-900">Time Off</h1>
           <div className="text-sm text-slate-500">
             {requests.length === 0
               ? 'No requests yet'
@@ -183,13 +186,14 @@ export function TimeOffView() {
               {r.status === 'Pending' && (
                 <Button
                   variant="secondary"
-                  onClick={() =>
+                  onClick={() => {
                     dispatch({
                       type: 'TIME_OFF_CANCEL',
                       requestId: r.id,
                       actorId: currentUserId,
-                    })
-                  }
+                    });
+                    showToast('Request withdrawn');
+                  }}
                 >
                   Withdraw request
                 </Button>
