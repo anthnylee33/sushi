@@ -13,7 +13,7 @@ import {
 } from '../state/selectors';
 
 export function ManagerQueueView() {
-  const { state, dispatch } = useShifts();
+  const { state, tryDispatch } = useShifts();
   const { showToast } = useToast();
   const swapQueue = pendingApprovalQueue(state);
   const timeOffQueue = pendingTimeOffQueue(state);
@@ -119,8 +119,8 @@ export function ManagerQueueView() {
                         <Button
                           variant="secondary"
                           onClick={() => {
-                            dispatch({ type: 'DENY', shiftId: shift.id });
-                            showToast('Swap denied — back on the Board');
+                            const ok = tryDispatch({ type: 'DENY', shiftId: shift.id });
+                            if (ok) showToast('Swap denied — back on the Board');
                           }}
                         >
                           Deny
@@ -128,8 +128,8 @@ export function ManagerQueueView() {
                         <Button
                           variant="success"
                           onClick={() => {
-                            dispatch({ type: 'APPROVE', shiftId: shift.id });
-                            showToast('Swap approved', 'success');
+                            const ok = tryDispatch({ type: 'APPROVE', shiftId: shift.id });
+                            if (ok) showToast('Swap approved', 'success');
                           }}
                         >
                           Approve
@@ -195,11 +195,11 @@ export function ManagerQueueView() {
                         <Button
                           variant="secondary"
                           onClick={() => {
-                            dispatch({
+                            const ok = tryDispatch({
                               type: 'TIME_OFF_DENY',
                               requestId: req.id,
                             });
-                            showToast('Time-off request denied');
+                            if (ok) showToast('Time-off request denied');
                           }}
                         >
                           Deny
@@ -207,11 +207,11 @@ export function ManagerQueueView() {
                         <Button
                           variant="success"
                           onClick={() => {
-                            dispatch({
+                            const ok = tryDispatch({
                               type: 'TIME_OFF_APPROVE',
                               requestId: req.id,
                             });
-                            showToast('Time-off request approved', 'success');
+                            if (ok) showToast('Time-off request approved', 'success');
                           }}
                         >
                           Approve

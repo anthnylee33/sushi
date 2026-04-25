@@ -23,7 +23,7 @@ function generateId(): string {
 }
 
 export function TimeOffView() {
-  const { state, dispatch } = useShifts();
+  const { state, tryDispatch } = useShifts();
   const { currentUserId } = useSession();
   const { showToast } = useToast();
   const requests = timeOffForUser(state, currentUserId);
@@ -61,7 +61,7 @@ export function TimeOffView() {
       setError('Tell your manager why you need the time.');
       return;
     }
-    dispatch({
+    const ok = tryDispatch({
       type: 'TIME_OFF_REQUEST',
       requestId: generateId(),
       actorId: currentUserId,
@@ -69,7 +69,7 @@ export function TimeOffView() {
       endDate,
       reason,
     });
-    showToast('Request sent to your manager', 'success');
+    if (ok) showToast('Request sent to your manager', 'success');
     close();
   };
 
@@ -187,12 +187,12 @@ export function TimeOffView() {
                 <Button
                   variant="secondary"
                   onClick={() => {
-                    dispatch({
+                    const ok = tryDispatch({
                       type: 'TIME_OFF_CANCEL',
                       requestId: r.id,
                       actorId: currentUserId,
                     });
-                    showToast('Request withdrawn');
+                    if (ok) showToast('Request withdrawn');
                   }}
                 >
                   Withdraw request

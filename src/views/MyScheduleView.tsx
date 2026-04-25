@@ -10,7 +10,7 @@ import {
 } from '../state/selectors';
 
 export function MyScheduleView() {
-  const { state, dispatch } = useShifts();
+  const { state, tryDispatch } = useShifts();
   const { currentUserId } = useSession();
   const me = state.users[currentUserId];
 
@@ -36,7 +36,7 @@ export function MyScheduleView() {
             Next up
           </div>
           <ShiftCard shift={next} highlight>
-            <ActionFor shiftId={next.id} dispatch={dispatch} status={next.status} />
+            <ActionFor shiftId={next.id} tryDispatch={tryDispatch} status={next.status} />
           </ShiftCard>
         </div>
       ) : (
@@ -53,7 +53,7 @@ export function MyScheduleView() {
           <div className="flex flex-col gap-3">
             {rest.map((s) => (
               <ShiftCard key={s.id} shift={s}>
-                <ActionFor shiftId={s.id} dispatch={dispatch} status={s.status} />
+                <ActionFor shiftId={s.id} tryDispatch={tryDispatch} status={s.status} />
               </ShiftCard>
             ))}
           </div>
@@ -66,11 +66,11 @@ export function MyScheduleView() {
 function ActionFor({
   shiftId,
   status,
-  dispatch,
+  tryDispatch,
 }: {
   shiftId: string;
   status: 'Active' | 'Offered' | 'PendingApproval';
-  dispatch: ReturnType<typeof useShifts>['dispatch'];
+  tryDispatch: ReturnType<typeof useShifts>['tryDispatch'];
 }) {
   const { currentUserId } = useSession();
   const { showToast } = useToast();
@@ -79,8 +79,8 @@ function ActionFor({
       <Button
         variant="secondary"
         onClick={() => {
-          dispatch({ type: 'NEED_COVERAGE', shiftId, actorId: currentUserId });
-          showToast('Shift posted to the Board', 'success');
+          const ok = tryDispatch({ type: 'NEED_COVERAGE', shiftId, actorId: currentUserId });
+          if (ok) showToast('Shift posted to the Board', 'success');
         }}
       >
         Need coverage
@@ -92,8 +92,8 @@ function ActionFor({
       <Button
         variant="secondary"
         onClick={() => {
-          dispatch({ type: 'WITHDRAW', shiftId, actorId: currentUserId });
-          showToast('Shift pulled from the Board');
+          const ok = tryDispatch({ type: 'WITHDRAW', shiftId, actorId: currentUserId });
+          if (ok) showToast('Shift pulled from the Board');
         }}
       >
         Withdraw from board

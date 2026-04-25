@@ -6,7 +6,7 @@ import { useToast } from '../state/ToastContext';
 import { boardForUser } from '../state/selectors';
 
 export function BoardView() {
-  const { state, dispatch } = useShifts();
+  const { state, tryDispatch } = useShifts();
   const { currentUserId } = useSession();
   const { showToast } = useToast();
   const me = state.users[currentUserId];
@@ -40,12 +40,12 @@ export function BoardView() {
                 </div>
                 <Button
                   onClick={() => {
-                    dispatch({
+                    const ok = tryDispatch({
                       type: 'CLAIM',
                       shiftId: shift.id,
                       actorId: currentUserId,
                     });
-                    showToast('Claim sent for manager approval', 'success');
+                    if (ok) showToast('Claim sent for manager approval', 'success');
                   }}
                 >
                   Claim shift
