@@ -2,11 +2,13 @@ import { Button } from '../components/Button';
 import { ShiftCard } from '../components/ShiftCard';
 import { useSession } from '../state/SessionContext';
 import { useShifts } from '../state/ShiftsContext';
+import { useToast } from '../state/ToastContext';
 import { boardForUser } from '../state/selectors';
 
 export function BoardView() {
-  const { state, dispatch } = useShifts();
+  const { state, tryDispatch } = useShifts();
   const { currentUserId } = useSession();
+  const { showToast } = useToast();
   const me = state.users[currentUserId];
 
   const offers = boardForUser(state, currentUserId);
@@ -14,7 +16,7 @@ export function BoardView() {
   return (
     <div className="flex flex-col gap-4 px-4 pt-4 pb-28">
       <div>
-        <div className="text-2xl font-bold text-slate-900">The Board</div>
+        <h1 className="text-2xl font-bold text-slate-900">The Board</h1>
         <div className="text-sm text-slate-500">
           Open {me?.role.toLowerCase()} shifts you can pick up
         </div>
@@ -37,13 +39,14 @@ export function BoardView() {
                   </span>
                 </div>
                 <Button
-                  onClick={() =>
-                    dispatch({
+                  onClick={() => {
+                    const ok = tryDispatch({
                       type: 'CLAIM',
                       shiftId: shift.id,
                       actorId: currentUserId,
-                    })
-                  }
+                    });
+                    if (ok) showToast('Claim sent for manager approval', 'success');
+                  }}
                 >
                   Claim shift
                 </Button>

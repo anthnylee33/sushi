@@ -14,11 +14,13 @@ const variants: Record<Variant, string> = {
 export function Button({
   variant = 'primary',
   className = '',
+  type = 'button',
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
   return (
     <button
-      className={`inline-flex h-12 w-full items-center justify-center rounded-xl px-4 text-base font-semibold shadow-sm transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}
+      type={type}
+      className={`inline-flex h-12 w-full items-center justify-center rounded-xl px-4 text-base font-semibold shadow-sm transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}
       {...rest}
     />
   );

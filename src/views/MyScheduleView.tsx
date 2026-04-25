@@ -2,6 +2,7 @@ import { Button } from '../components/Button';
 import { ShiftCard } from '../components/ShiftCard';
 import { useSession } from '../state/SessionContext';
 import { useShifts } from '../state/ShiftsContext';
+import { useToast } from '../state/ToastContext';
 import {
   myScheduleForUser,
   nextShiftForUser,
@@ -9,7 +10,7 @@ import {
 } from '../state/selectors';
 
 export function MyScheduleView() {
-  const { state, dispatch } = useShifts();
+  const { state, tryDispatch } = useShifts();
   const { currentUserId } = useSession();
   const me = state.users[currentUserId];
 
@@ -21,9 +22,9 @@ export function MyScheduleView() {
   return (
     <div className="flex flex-col gap-4 px-4 pt-4 pb-28">
       <div>
-        <div className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold text-slate-900">
           Hi, {me?.name.split(' ')[0]}
-        </div>
+        </h1>
         <div className="text-sm text-slate-500">
           {hours.toFixed(1)} hrs scheduled this week
         </div>
@@ -35,7 +36,7 @@ export function MyScheduleView() {
             Next up
           </div>
           <ShiftCard shift={next} highlight>
-            <ActionFor shiftId={next.id} dispatch={dispatch} status={next.status} />
+            <ActionFor shiftId={next.id} tryDispatch={tryDispatch} status={next.status} />
           </ShiftCard>
         </div>
       ) : (
@@ -52,7 +53,7 @@ export function MyScheduleView() {
           <div className="flex flex-col gap-3">
             {rest.map((s) => (
               <ShiftCard key={s.id} shift={s}>
-                <ActionFor shiftId={s.id} dispatch={dispatch} status={s.status} />
+                <ActionFor shiftId={s.id} tryDispatch={tryDispatch} status={s.status} />
               </ShiftCard>
             ))}
           </div>
@@ -65,20 +66,22 @@ export function MyScheduleView() {
 function ActionFor({
   shiftId,
   status,
-  dispatch,
+  tryDispatch,
 }: {
   shiftId: string;
   status: 'Active' | 'Offered' | 'PendingApproval';
-  dispatch: ReturnType<typeof useShifts>['dispatch'];
+  tryDispatch: ReturnType<typeof useShifts>['tryDispatch'];
 }) {
   const { currentUserId } = useSession();
+  const { showToast } = useToast();
   if (status === 'Active') {
     return (
       <Button
         variant="secondary"
-        onClick={() =>
-          dispatch({ type: 'NEED_COVERAGE', shiftId, actorId: currentUserId })
-        }
+        onClick={() => {
+          const ok = tryDispatch({ type: 'NEED_COVERAGE', shiftId, actorId: currentUserId });
+          if (ok) showToast('Shift posted to the Board', 'success');
+        }}
       >
         Need coverage
       </Button>
@@ -88,9 +91,10 @@ function ActionFor({
     return (
       <Button
         variant="secondary"
-        onClick={() =>
-          dispatch({ type: 'WITHDRAW', shiftId, actorId: currentUserId })
-        }
+        onClick={() => {
+          const ok = tryDispatch({ type: 'WITHDRAW', shiftId, actorId: currentUserId });
+          if (ok) showToast('Shift pulled from the Board');
+        }}
       >
         Withdraw from board
       </Button>
