@@ -3,6 +3,7 @@ import { Button } from '../components/Button';
 import { ShiftCard } from '../components/ShiftCard';
 import { TimeOffCard } from '../components/TimeOffCard';
 import { useShifts } from '../state/ShiftsContext';
+import { useToast } from '../state/ToastContext';
 import {
   assignedShiftsInRange,
   pendingApprovalQueue,
@@ -13,6 +14,7 @@ import {
 
 export function ManagerQueueView() {
   const { state, dispatch } = useShifts();
+  const { showToast } = useToast();
   const swapQueue = pendingApprovalQueue(state);
   const timeOffQueue = pendingTimeOffQueue(state);
   const totalPending = swapQueue.length + timeOffQueue.length;
@@ -20,9 +22,9 @@ export function ManagerQueueView() {
   return (
     <div className="flex flex-col gap-5 px-4 pt-4 pb-6">
       <div>
-        <div className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold text-slate-900">
           Approval queue
-        </div>
+        </h1>
         <div className="text-sm text-slate-500">
           {totalPending === 0
             ? 'Nothing waiting on you'
@@ -116,17 +118,19 @@ export function ManagerQueueView() {
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         <Button
                           variant="secondary"
-                          onClick={() =>
-                            dispatch({ type: 'DENY', shiftId: shift.id })
-                          }
+                          onClick={() => {
+                            dispatch({ type: 'DENY', shiftId: shift.id });
+                            showToast('Swap denied — back on the Board');
+                          }}
                         >
                           Deny
                         </Button>
                         <Button
                           variant="success"
-                          onClick={() =>
-                            dispatch({ type: 'APPROVE', shiftId: shift.id })
-                          }
+                          onClick={() => {
+                            dispatch({ type: 'APPROVE', shiftId: shift.id });
+                            showToast('Swap approved', 'success');
+                          }}
                         >
                           Approve
                         </Button>
@@ -190,23 +194,25 @@ export function ManagerQueueView() {
                       <div className="grid grid-cols-2 gap-2">
                         <Button
                           variant="secondary"
-                          onClick={() =>
+                          onClick={() => {
                             dispatch({
                               type: 'TIME_OFF_DENY',
                               requestId: req.id,
-                            })
-                          }
+                            });
+                            showToast('Time-off request denied');
+                          }}
                         >
                           Deny
                         </Button>
                         <Button
                           variant="success"
-                          onClick={() =>
+                          onClick={() => {
                             dispatch({
                               type: 'TIME_OFF_APPROVE',
                               requestId: req.id,
-                            })
-                          }
+                            });
+                            showToast('Time-off request approved', 'success');
+                          }}
                         >
                           Approve
                         </Button>

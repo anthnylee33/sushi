@@ -19,8 +19,9 @@ export function BottomNav() {
         return (
           <button
             key={t.id}
+            type="button"
             onClick={() => setStaffTab(t.id)}
-            className={`flex flex-col items-center gap-0.5 py-2.5 text-xs font-semibold transition ${
+            className={`flex flex-col items-center gap-0.5 py-2.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 ${
               active ? 'text-indigo-600' : 'text-slate-500'
             }`}
             aria-current={active ? 'page' : undefined}
