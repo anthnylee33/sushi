@@ -19,9 +19,25 @@ export interface Shift {
   status: ShiftStatus;
 }
 
+export type TimeOffStatus = 'Pending' | 'Approved' | 'Denied';
+
+export interface TimeOffRequest {
+  id: string;
+  userId: string;
+  /** YYYY-MM-DD, inclusive. */
+  startDate: string;
+  /** YYYY-MM-DD, inclusive. */
+  endDate: string;
+  reason: string;
+  status: TimeOffStatus;
+  /** ISO timestamp. */
+  createdAt: string;
+}
+
 export interface ShiftsState {
   users: Record<string, User>;
   shifts: Record<string, Shift>;
+  timeOff: Record<string, TimeOffRequest>;
 }
 
 export type ShiftAction =
@@ -30,4 +46,16 @@ export type ShiftAction =
   | { type: 'CLAIM'; shiftId: string; actorId: string }
   | { type: 'CANCEL_CLAIM'; shiftId: string; actorId: string }
   | { type: 'APPROVE'; shiftId: string }
-  | { type: 'DENY'; shiftId: string };
+  | { type: 'DENY'; shiftId: string }
+  | {
+      type: 'TIME_OFF_REQUEST';
+      requestId: string;
+      actorId: string;
+      startDate: string;
+      endDate: string;
+      reason: string;
+      createdAt?: string;
+    }
+  | { type: 'TIME_OFF_CANCEL'; requestId: string; actorId: string }
+  | { type: 'TIME_OFF_APPROVE'; requestId: string }
+  | { type: 'TIME_OFF_DENY'; requestId: string };

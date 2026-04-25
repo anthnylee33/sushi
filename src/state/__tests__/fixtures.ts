@@ -1,4 +1,10 @@
-import type { Shift, ShiftStatus, ShiftsState, User } from '../../types';
+import type {
+  Shift,
+  ShiftStatus,
+  ShiftsState,
+  TimeOffRequest,
+  User,
+} from '../../types';
 
 /**
  * Reducer/selector test fixtures. Everything is offset from a fixed anchor
@@ -65,5 +71,33 @@ export function stateWith(...shifts: Shift[]): ShiftsState {
   return {
     users,
     shifts: Object.fromEntries(shifts.map((s) => [s.id, s])),
+    timeOff: {},
+  };
+}
+
+export function stateWithAll(
+  shifts: Shift[],
+  timeOff: TimeOffRequest[] = [],
+): ShiftsState {
+  return {
+    users,
+    shifts: Object.fromEntries(shifts.map((s) => [s.id, s])),
+    timeOff: Object.fromEntries(timeOff.map((r) => [r.id, r])),
+  };
+}
+
+let autoReqId = 0;
+export function makeTimeOff(
+  o: Partial<TimeOffRequest> = {},
+): TimeOffRequest {
+  autoReqId += 1;
+  return {
+    id: o.id ?? `to-${autoReqId}`,
+    userId: o.userId ?? 'u-maya',
+    startDate: o.startDate ?? '2026-06-01',
+    endDate: o.endDate ?? '2026-06-03',
+    reason: o.reason ?? 'Vacation',
+    status: o.status ?? 'Pending',
+    createdAt: o.createdAt ?? NOW.toISOString(),
   };
 }

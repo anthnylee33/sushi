@@ -1,4 +1,4 @@
-import type { ShiftsState, User, Shift } from '../types';
+import type { ShiftsState, User, Shift, TimeOffRequest } from '../types';
 
 const users: User[] = [
   { id: 'u-maya', name: 'Maya Chen', role: 'Server' },
@@ -70,7 +70,44 @@ const shifts: Shift[] = [
   shift('s-15', 6, 12, 20, 'Bartender', 'u-sam', 'Active'),
 ];
 
+function dateOnlyOffset(days: number): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function createdAtOffset(minutesAgo: number): string {
+  return new Date(Date.now() - minutesAgo * 60 * 1000).toISOString();
+}
+
+const timeOff: TimeOffRequest[] = [
+  // Jules has a pending request spanning 10–12 days out — lands in the
+  // manager queue on first load alongside the pending shift swap.
+  {
+    id: 'to-1',
+    userId: 'u-jules',
+    startDate: dateOnlyOffset(10),
+    endDate: dateOnlyOffset(12),
+    reason: 'Out of town for a wedding',
+    status: 'Pending',
+    createdAt: createdAtOffset(45),
+  },
+  // Maya has an already-approved request from last week — shows up in her
+  // history list so the "approved" visual state is exercised on first load.
+  {
+    id: 'to-2',
+    userId: 'u-maya',
+    startDate: dateOnlyOffset(20),
+    endDate: dateOnlyOffset(20),
+    reason: 'Doctor appointment',
+    status: 'Approved',
+    createdAt: createdAtOffset(60 * 24 * 3),
+  },
+];
+
 export const seedState: ShiftsState = {
   users: Object.fromEntries(users.map((u) => [u.id, u])),
   shifts: Object.fromEntries(shifts.map((s) => [s.id, s])),
+  timeOff: Object.fromEntries(timeOff.map((r) => [r.id, r])),
 };

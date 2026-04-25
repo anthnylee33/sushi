@@ -1,4 +1,4 @@
-import type { Shift, ShiftsState } from '../types';
+import type { Shift, ShiftsState, TimeOffRequest } from '../types';
 
 export function shiftHours(shift: Shift): number {
   const start = new Date(shift.startTime).getTime();
@@ -154,4 +154,49 @@ export function wouldExceedOvertime(
   const projected =
     weeklyHoursFor(state, userId, shiftWeek) + shiftHours(shift);
   return projected > 40;
+}
+
+/** Newest requests first. */
+function sortByCreatedDesc(a: TimeOffRequest, b: TimeOffRequest): number {
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+}
+
+/** Oldest pending first (FIFO for the manager queue). */
+function sortByCreatedAsc(a: TimeOffRequest, b: TimeOffRequest): number {
+  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+}
+
+export function listTimeOff(state: ShiftsState): TimeOffRequest[] {
+  return Object.values(state.timeOff);
+}
+
+export function timeOffForUser(
+  state: ShiftsState,
+  userId: string,
+): TimeOffRequest[] {
+  return listTimeOff(state)
+    .filter((r) => r.userId === userId)
+    .sort(sortByCreatedDesc);
+}
+
+export function pendingTimeOffQueue(state: ShiftsState): TimeOffRequest[] {
+  return listTimeOff(state)
+    .filter((r) => r.status === 'Pending')
+    .sort(sortByCreatedAsc);
+}
+
+/**
+ * Count of a user's assigned shifts that fall inside a [startDate, endDate]
+ * range (both inclusive, YYYY-MM-DD). Used to warn managers when approving
+ * time off would leave assigned shifts uncovered.
+ */
+export function assignedShiftsInRange(
+  state: ShiftsState,
+  userId: string,
+  startDate: string,
+  endDate: string,
+): Shift[] {
+  return listShifts(state)
+    .filter((s) => s.assignedUserId === userId)
+    .filter((s) => s.date >= startDate && s.date <= endDate);
 }
