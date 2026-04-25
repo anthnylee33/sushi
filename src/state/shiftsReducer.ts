@@ -183,4 +183,10 @@ export function shiftsReducer(
       return setTimeOff(state, action.requestId, { status: 'Denied' });
     }
   }
+
+  // Defensive fallthrough: if a new action variant is added to ShiftAction
+  // without a matching case, `useReducer` must still get a defined state
+  // back (tsconfig doesn't enable `noImplicitReturns` or `strict`, so TS
+  // won't catch the omission at compile time).
+  return state;
 }
