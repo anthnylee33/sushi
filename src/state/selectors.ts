@@ -63,17 +63,32 @@ export function myScheduleForUser(
     );
 }
 
+/**
+ * Any shift that counts as a "commitment" for this user — they are currently
+ * assigned to it (Active or Offered shifts they own, where Offered means still
+ * theirs until someone claims), or they have a pending claim on it. Offered
+ * shifts they own do NOT count as conflicts because they intend to hand them
+ * off; everything else does.
+ */
+export function userCommittedShifts(
+  state: ShiftsState,
+  userId: string,
+): Shift[] {
+  return listShifts(state).filter((s) => {
+    if (s.assignedUserId === userId && s.status !== 'Offered') return true;
+    if (s.claimedByUserId === userId && s.status === 'PendingApproval')
+      return true;
+    return false;
+  });
+}
+
 export function hasOverlapForUser(
   state: ShiftsState,
   userId: string,
   candidate: Shift,
 ): boolean {
-  return listShifts(state).some(
-    (s) =>
-      s.id !== candidate.id &&
-      s.assignedUserId === userId &&
-      s.status !== 'Offered' &&
-      shiftsOverlap(s, candidate),
+  return userCommittedShifts(state, userId).some(
+    (s) => s.id !== candidate.id && shiftsOverlap(s, candidate),
   );
 }
 
@@ -109,10 +124,18 @@ export function pendingApprovalQueue(state: ShiftsState): Shift[] {
     );
 }
 
-export function weeklyHoursFor(state: ShiftsState, userId: string): number {
-  const now = new Date();
-  const weekStart = startOfWeek(now).getTime();
-  const weekEnd = endOfWeek(now).getTime();
+/**
+ * Sum of hours the user is assigned for the week containing `referenceDate`.
+ * Defaults to "today" for the visible-in-UI case; the reducer/overtime check
+ * pass the candidate shift's date so cross-week swaps aren't mixed together.
+ */
+export function weeklyHoursFor(
+  state: ShiftsState,
+  userId: string,
+  referenceDate: Date = new Date(),
+): number {
+  const weekStart = startOfWeek(referenceDate).getTime();
+  const weekEnd = endOfWeek(referenceDate).getTime();
   return listShifts(state)
     .filter((s) => s.assignedUserId === userId)
     .filter((s) => {
@@ -127,8 +150,8 @@ export function wouldExceedOvertime(
   userId: string,
   shift: Shift,
 ): boolean {
-  // The shift hours are added on top only if the shift isn't already counted
-  // for this user (it isn't — assigned changes only on Approve).
-  const projected = weeklyHoursFor(state, userId) + shiftHours(shift);
+  const shiftWeek = new Date(shift.startTime);
+  const projected =
+    weeklyHoursFor(state, userId, shiftWeek) + shiftHours(shift);
   return projected > 40;
 }

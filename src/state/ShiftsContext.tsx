@@ -25,6 +25,7 @@ export function ShiftsProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useShifts(): ShiftsContextValue {
   const ctx = useContext(ShiftsContext);
   if (!ctx) throw new Error('useShifts must be used within ShiftsProvider');

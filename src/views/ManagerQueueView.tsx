@@ -40,7 +40,7 @@ export function ManagerQueueView() {
               !!claiming &&
               wouldExceedOvertime(state, claiming.id, shift);
             const claimerHours = claiming
-              ? weeklyHoursFor(state, claiming.id)
+              ? weeklyHoursFor(state, claiming.id, new Date(shift.startTime))
               : 0;
 
             return (
@@ -67,7 +67,7 @@ export function ManagerQueueView() {
                   {claiming && (
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">
-                        {claiming.name.split(' ')[0]}'s week so far
+                        {claiming.name.split(' ')[0]}'s hrs that week
                       </span>
                       <span
                         className={`font-semibold ${

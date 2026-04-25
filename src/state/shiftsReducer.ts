@@ -82,6 +82,9 @@ export function shiftsReducer(
       if (!claimer) return state;
       // Defense-in-depth role re-check.
       if (claimer.role !== shift.role) return state;
+      // Defense-in-depth overlap re-check: a second concurrent pending claim
+      // on an overlapping shift must not slip past approval.
+      if (hasOverlapForUser(state, shift.claimedByUserId, shift)) return state;
       return setShift(state, shift.id, {
         assignedUserId: shift.claimedByUserId,
         claimedByUserId: null,
