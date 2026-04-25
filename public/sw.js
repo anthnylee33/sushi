@@ -63,8 +63,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(SHELL_CACHE).then((cache) => cache.put('/index.html', copy));
+          // Only refresh the cached shell with a successful response;
+          // otherwise an error page would overwrite the offline fallback.
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches.open(SHELL_CACHE).then((cache) => cache.put('/index.html', copy));
+          }
           return response;
         })
         .catch(() =>
@@ -89,11 +93,9 @@ self.addEventListener('fetch', (event) => {
           caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
           return response;
         })
-        .catch(() =>
-          caches.match('/index.html').then(
-            (fallback) => fallback ?? new Response('Offline', { status: 503 }),
-          ),
-        );
+        // Static-asset fallback must NOT be index.html — the browser would
+        // try to parse HTML as JS/CSS/image and produce confusing errors.
+        .catch(() => new Response('', { status: 503, statusText: 'Offline' }));
     }),
   );
 });
