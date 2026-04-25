@@ -8,7 +8,6 @@ const toneClasses: Record<ToastTone, string> = {
 
 export function ToastHost() {
   const { toasts, dismissToast } = useToast();
-  if (toasts.length === 0) return null;
 
   return (
     <div
