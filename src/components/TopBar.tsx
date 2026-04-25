@@ -16,13 +16,17 @@ export function TopBar() {
     <div className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 px-4 pt-4 pb-3 backdrop-blur">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <label
+            htmlFor="acting-as"
+            className="text-xs font-semibold uppercase tracking-wide text-slate-500"
+          >
             Acting as
-          </div>
+          </label>
           <select
+            id="acting-as"
             value={currentUserId}
             onChange={(e) => setCurrentUserId(e.target.value)}
-            className="mt-0.5 w-full bg-transparent text-base font-semibold text-slate-900 outline-none"
+            className="mt-0.5 w-full bg-transparent text-base font-semibold text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
             disabled={viewMode === 'manager'}
           >
             {users.map((u) => (
@@ -38,10 +42,11 @@ export function TopBar() {
           aria-label="View mode"
         >
           <button
+            type="button"
             role="tab"
             aria-selected={viewMode === 'staff'}
             onClick={() => setViewMode('staff')}
-            className={`rounded-full px-3 py-1.5 transition ${
+            className={`rounded-full px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
               viewMode === 'staff'
                 ? 'bg-white text-slate-900 shadow-sm'
                 : 'text-slate-600'
@@ -50,10 +55,11 @@ export function TopBar() {
             Staff
           </button>
           <button
+            type="button"
             role="tab"
             aria-selected={viewMode === 'manager'}
             onClick={() => setViewMode('manager')}
-            className={`rounded-full px-3 py-1.5 transition ${
+            className={`rounded-full px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
               viewMode === 'manager'
                 ? 'bg-white text-slate-900 shadow-sm'
                 : 'text-slate-600'

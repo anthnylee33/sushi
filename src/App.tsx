@@ -1,8 +1,10 @@
 import { AppFrame } from './components/AppFrame';
 import { BottomNav } from './components/BottomNav';
+import { ToastHost } from './components/ToastHost';
 import { TopBar } from './components/TopBar';
 import { SessionProvider, useSession } from './state/SessionContext';
 import { ShiftsProvider } from './state/ShiftsContext';
+import { ToastProvider } from './state/ToastContext';
 import { BoardView } from './views/BoardView';
 import { ManagerQueueView } from './views/ManagerQueueView';
 import { MyScheduleView } from './views/MyScheduleView';
@@ -12,11 +14,11 @@ function StaffArea() {
   const { staffTab } = useSession();
   return (
     <>
-      <div className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto">
         {staffTab === 'schedule' && <MyScheduleView />}
         {staffTab === 'board' && <BoardView />}
         {staffTab === 'timeoff' && <TimeOffView />}
-      </div>
+      </main>
       <BottomNav />
     </>
   );
@@ -24,9 +26,9 @@ function StaffArea() {
 
 function ManagerArea() {
   return (
-    <div className="flex-1 overflow-y-auto">
+    <main className="flex-1 overflow-y-auto">
       <ManagerQueueView />
-    </div>
+    </main>
   );
 }
 
@@ -34,6 +36,7 @@ function Shell() {
   const { viewMode } = useSession();
   return (
     <AppFrame>
+      <ToastHost />
       <TopBar />
       {viewMode === 'staff' ? <StaffArea /> : <ManagerArea />}
     </AppFrame>
@@ -44,7 +47,9 @@ export default function App() {
   return (
     <ShiftsProvider>
       <SessionProvider>
-        <Shell />
+        <ToastProvider>
+          <Shell />
+        </ToastProvider>
       </SessionProvider>
     </ShiftsProvider>
   );
