@@ -182,6 +182,40 @@ export function shiftsReducer(
       if (req.status !== 'Pending') return state;
       return setTimeOff(state, action.requestId, { status: 'Denied' });
     }
+
+    case 'CREATE_SHIFT': {
+      // Idempotent on retry: same id, no-op.
+      if (state.shifts[action.shiftId]) return state;
+      const user = state.users[action.assignedUserId];
+      if (!user) return state;
+
+      const startMs = Date.parse(action.startTime);
+      const endMs = Date.parse(action.endTime);
+      if (Number.isNaN(startMs) || Number.isNaN(endMs)) return state;
+      if (startMs >= endMs) return state;
+      // No back-dating: a manager can't create a shift that's already started.
+      if (startMs < Date.now()) return state;
+
+      const candidate: Shift = {
+        id: action.shiftId,
+        // Local YYYY-MM-DD derived from the start; the UI displays in local TZ.
+        date: new Date(startMs).toISOString().slice(0, 10),
+        startTime: new Date(startMs).toISOString(),
+        endTime: new Date(endMs).toISOString(),
+        role: user.role,
+        assignedUserId: user.id,
+        claimedByUserId: null,
+        status: 'Active',
+      };
+      // Reject if this would double-book the assignee against any existing
+      // commitment (other Active assignment, or a pending claim they made).
+      if (hasOverlapForUser(state, user.id, candidate)) return state;
+
+      return {
+        ...state,
+        shifts: { ...state.shifts, [candidate.id]: candidate },
+      };
+    }
   }
 
   // Defensive fallthrough: if a new action variant is added to ShiftAction

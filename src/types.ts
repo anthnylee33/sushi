@@ -58,4 +58,11 @@ export type ShiftAction =
     }
   | { type: 'TIME_OFF_CANCEL'; requestId: string; actorId: string }
   | { type: 'TIME_OFF_APPROVE'; requestId: string }
-  | { type: 'TIME_OFF_DENY'; requestId: string };
+  | { type: 'TIME_OFF_DENY'; requestId: string }
+  | {
+      type: 'CREATE_SHIFT';
+      shiftId: string;
+      assignedUserId: string;
+      startTime: string;
+      endTime: string;
+    };

@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
+import { CreateShiftForm } from '../components/CreateShiftForm';
 import { ShiftCard } from '../components/ShiftCard';
 import { TimeOffCard } from '../components/TimeOffCard';
 import { useShifts } from '../state/ShiftsContext';
@@ -19,18 +21,36 @@ export function ManagerQueueView() {
   const timeOffQueue = pendingTimeOffQueue(state);
   const totalPending = swapQueue.length + timeOffQueue.length;
 
+  const [createOpen, setCreateOpen] = useState(false);
+
   return (
     <div className="flex flex-col gap-5 px-4 pt-4 pb-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">
-          Approval queue
-        </h1>
-        <div className="text-sm text-slate-500">
-          {totalPending === 0
-            ? 'Nothing waiting on you'
-            : `${totalPending} request${totalPending === 1 ? '' : 's'} waiting on you`}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">
+            Approval queue
+          </h1>
+          <div className="text-sm text-slate-500">
+            {totalPending === 0
+              ? 'Nothing waiting on you'
+              : `${totalPending} request${totalPending === 1 ? '' : 's'} waiting on you`}
+          </div>
         </div>
+        {!createOpen && (
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 active:scale-[0.99]"
+            aria-label="Add a new shift"
+          >
+            + Add shift
+          </button>
+        )}
       </div>
+
+      {createOpen && (
+        <CreateShiftForm onClose={() => setCreateOpen(false)} />
+      )}
 
       {totalPending === 0 ? (
         <div className="rounded-2xl bg-white p-8 text-center text-slate-500 ring-1 ring-slate-200">
