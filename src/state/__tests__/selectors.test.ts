@@ -5,7 +5,9 @@ import {
   isClaimEligible,
   pendingApprovalQueue,
   shiftHours,
+  shiftsByDayInWeek,
   userCommittedShifts,
+  weekStartLocal,
   weeklyHoursFor,
   wouldExceedOvertime,
 } from '../selectors';
@@ -294,5 +296,105 @@ describe('weeklyHoursFor / wouldExceedOvertime', () => {
     });
     const state = stateWith(...thisWeekShifts, candidate);
     expect(wouldExceedOvertime(state, 'u-sam', candidate)).toBe(false);
+  });
+});
+
+describe('weekStartLocal', () => {
+  it('snaps to Monday 00:00 of the same calendar week', () => {
+    // 2026-05-13 is a Wednesday in any TZ within reasonable bounds.
+    const wed = new Date('2026-05-13T15:30:00');
+    const start = weekStartLocal(wed);
+    expect(start.getDay()).toBe(1); // Monday
+    expect(start.getHours()).toBe(0);
+    expect(start.getMinutes()).toBe(0);
+    // Same week.
+    expect(start.getDate()).toBeLessThanOrEqual(wed.getDate());
+    expect(wed.getTime() - start.getTime()).toBeLessThan(7 * 24 * 60 * 60 * 1000);
+  });
+
+  it('handles Sunday by going back 6 days, not forward 1', () => {
+    const sun = new Date('2026-05-17T10:00:00');
+    expect(sun.getDay()).toBe(0);
+    const start = weekStartLocal(sun);
+    expect(start.getDay()).toBe(1);
+    expect((sun.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)).toBeCloseTo(
+      6,
+      0,
+    );
+  });
+});
+
+describe('shiftsByDayInWeek', () => {
+  it('returns 7 day buckets keyed by local YYYY-MM-DD', () => {
+    const start = weekStartLocal(NOW);
+    const buckets = shiftsByDayInWeek(stateWith(), start);
+    expect(buckets).toHaveLength(7);
+    // Each bucket label is one day after the previous.
+    for (let i = 1; i < buckets.length; i += 1) {
+      const prev = new Date(`${buckets[i - 1].date}T00:00:00`);
+      const cur = new Date(`${buckets[i].date}T00:00:00`);
+      expect(
+        Math.round((cur.getTime() - prev.getTime()) / (24 * 60 * 60 * 1000)),
+      ).toBe(1);
+    }
+  });
+
+  it('groups shifts into the bucket for the start time’s local day', () => {
+    // NOW = Wed 2026-05-13 12:00 UTC (anchor). Place two shifts on
+    // different days inside that ISO week and one outside it.
+    const inside = makeShift({
+      id: 's-in-1',
+      assignedUserId: 'u-maya',
+      startOffsetHours: 3, // same day as NOW
+      durationHours: 4,
+    });
+    const inside2 = makeShift({
+      id: 's-in-2',
+      assignedUserId: 'u-alex',
+      startOffsetHours: 27, // ~next day
+      durationHours: 5,
+    });
+    const outside = makeShift({
+      id: 's-out',
+      assignedUserId: 'u-jules',
+      startOffsetHours: 24 * 14, // two weeks out
+      durationHours: 4,
+    });
+    const state = stateWith(inside, inside2, outside);
+    const start = weekStartLocal(NOW);
+    const buckets = shiftsByDayInWeek(state, start);
+    const all = buckets.flatMap((b) => b.shifts.map((s) => s.id));
+    expect(all).toContain('s-in-1');
+    expect(all).toContain('s-in-2');
+    expect(all).not.toContain('s-out');
+  });
+
+  it('sorts shifts within a day ascending by start time', () => {
+    const morning = makeShift({
+      id: 's-am',
+      assignedUserId: 'u-maya',
+      startOffsetHours: 4,
+      durationHours: 3,
+    });
+    const evening = makeShift({
+      id: 's-pm',
+      assignedUserId: 'u-alex',
+      startOffsetHours: 10,
+      durationHours: 3,
+    });
+    // Insert evening first to make sure ordering isn't insertion-order.
+    const state = stateWith(evening, morning);
+    const start = weekStartLocal(NOW);
+    const buckets = shiftsByDayInWeek(state, start);
+    const todayBucket = buckets.find((b) => b.shifts.length >= 2);
+    expect(todayBucket).toBeDefined();
+    if (todayBucket) {
+      expect(todayBucket.shifts.map((s) => s.id)).toEqual(['s-am', 's-pm']);
+    }
+  });
+
+  it('returns empty arrays (not missing days) for days with no shifts', () => {
+    const buckets = shiftsByDayInWeek(stateWith(), weekStartLocal(NOW));
+    expect(buckets.every((b) => Array.isArray(b.shifts))).toBe(true);
   });
 });

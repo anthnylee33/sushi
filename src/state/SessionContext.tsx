@@ -8,6 +8,7 @@ import {
 
 export type ViewMode = 'staff' | 'manager';
 export type StaffTab = 'schedule' | 'board' | 'timeoff';
+export type ManagerTab = 'schedule' | 'approvals';
 
 interface SessionContextValue {
   currentUserId: string;
@@ -16,6 +17,8 @@ interface SessionContextValue {
   setViewMode: (m: ViewMode) => void;
   staffTab: StaffTab;
   setStaffTab: (t: StaffTab) => void;
+  managerTab: ManagerTab;
+  setManagerTab: (t: ManagerTab) => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -24,6 +27,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [currentUserId, setCurrentUserId] = useState<string>('u-maya');
   const [viewMode, setViewMode] = useState<ViewMode>('staff');
   const [staffTab, setStaffTab] = useState<StaffTab>('schedule');
+  const [managerTab, setManagerTab] = useState<ManagerTab>('schedule');
 
   const value = useMemo(
     () => ({
@@ -33,8 +37,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setViewMode,
       staffTab,
       setStaffTab,
+      managerTab,
+      setManagerTab,
     }),
-    [currentUserId, viewMode, staffTab],
+    [currentUserId, viewMode, staffTab, managerTab],
   );
   return (
     <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

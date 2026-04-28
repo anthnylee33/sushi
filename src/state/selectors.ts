@@ -200,3 +200,61 @@ export function assignedShiftsInRange(
     .filter((s) => s.assignedUserId === userId)
     .filter((s) => s.date >= startDate && s.date <= endDate);
 }
+
+/** Local YYYY-MM-DD for a Date (caller's timezone). */
+function ymdLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Monday 00:00 local time of the week containing `date`. */
+export function weekStartLocal(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  // Week starts Monday: 0=Sun..6=Sat → Mon offset (day+6)%7
+  const day = d.getDay();
+  const diff = (day + 6) % 7;
+  d.setDate(d.getDate() - diff);
+  return d;
+}
+
+export interface DayShifts {
+  /** Local YYYY-MM-DD; stable key for rendering. */
+  date: string;
+  /** Sorted ascending by start time. */
+  shifts: Shift[];
+}
+
+/**
+ * All shifts (any status) grouped by local calendar day across the 7 days
+ * starting at `weekStart`. Days with no shifts are still returned (empty
+ * array) so the calendar layout has a fixed-shape week.
+ */
+export function shiftsByDayInWeek(
+  state: ShiftsState,
+  weekStart: Date,
+): DayShifts[] {
+  const days: DayShifts[] = [];
+  const cursor = new Date(weekStart);
+  for (let i = 0; i < 7; i += 1) {
+    const date = ymdLocal(cursor);
+    const shiftsForDay = listShifts(state)
+      .filter((s) => {
+        // Group by the *local* day of the start time, not the stored
+        // `date` field — manager-created shifts derive their `date` from
+        // an ISO toString which can drift from the local date by a day in
+        // late-evening / early-morning timezones. The local start time
+        // is the source of truth for "what day is this shift on".
+        return ymdLocal(new Date(s.startTime)) === date;
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+      );
+    days.push({ date, shifts: shiftsForDay });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return days;
+}
