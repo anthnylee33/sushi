@@ -1,6 +1,6 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { shiftsReducer } from '../shiftsReducer';
-import { NOW, makeShift, stateWith } from './fixtures';
+import { NOW, at, makeShift, stateWith } from './fixtures';
 
 /**
  * The reducer is the single writer for shift state, and `assignedUserId`
@@ -441,5 +441,136 @@ describe('invariants', () => {
     expect(afterApprove.shifts['s-1'].assignedUserId).toBe('u-alex');
     expect(afterApprove.shifts['s-1'].claimedByUserId).toBe(null);
     expect(afterApprove.shifts['s-1'].status).toBe('Active');
+  });
+});
+
+describe('CREATE_SHIFT', () => {
+  it('adds an Active shift assigned to the chosen user; role auto-derives from the user', () => {
+    const next = shiftsReducer(stateWith(), {
+      type: 'CREATE_SHIFT',
+      shiftId: 's-new',
+      assignedUserId: 'u-jules',
+      startTime: at(48),
+      endTime: at(54),
+    });
+    const shift = next.shifts['s-new'];
+    expect(shift).toBeDefined();
+    expect(shift.assignedUserId).toBe('u-jules');
+    expect(shift.role).toBe('Bartender');
+    expect(shift.status).toBe('Active');
+    expect(shift.claimedByUserId).toBe(null);
+  });
+
+  it('rejects an unknown user', () => {
+    const before = stateWith();
+    const after = shiftsReducer(before, {
+      type: 'CREATE_SHIFT',
+      shiftId: 's-new',
+      assignedUserId: 'u-ghost',
+      startTime: at(48),
+      endTime: at(54),
+    });
+    expect(after).toBe(before);
+  });
+
+  it('rejects when end is not after start', () => {
+    const before = stateWith();
+    const after = shiftsReducer(before, {
+      type: 'CREATE_SHIFT',
+      shiftId: 's-new',
+      assignedUserId: 'u-maya',
+      startTime: at(48),
+      endTime: at(48),
+    });
+    expect(after).toBe(before);
+  });
+
+  it('rejects back-dated shifts (start in the past)', () => {
+    const before = stateWith();
+    const after = shiftsReducer(before, {
+      type: 'CREATE_SHIFT',
+      shiftId: 's-new',
+      assignedUserId: 'u-maya',
+      startTime: at(-2), // 2 hours before NOW
+      endTime: at(4),
+    });
+    expect(after).toBe(before);
+  });
+
+  it('rejects when the new shift overlaps an existing assignment', () => {
+    const existing = makeShift({
+      id: 's-exist',
+      assignedUserId: 'u-maya',
+      startOffsetHours: 48,
+      durationHours: 6,
+    });
+    const before = stateWith(existing);
+    const after = shiftsReducer(before, {
+      type: 'CREATE_SHIFT',
+      shiftId: 's-new',
+      assignedUserId: 'u-maya',
+      startTime: at(50), // overlaps the existing 48..54 window
+      endTime: at(56),
+    });
+    expect(after).toBe(before);
+  });
+
+  it('rejects when the new shift overlaps a pending claim by the same user', () => {
+    // Maya has a pending claim on a shift offered by Alex; that's a commitment
+    // for Maya, so a manager-created overlapping shift on Maya must be rejected.
+    const claimed = makeShift({
+      id: 's-claimed',
+      assignedUserId: 'u-alex',
+      claimedByUserId: 'u-maya',
+      status: 'PendingApproval',
+      startOffsetHours: 48,
+      durationHours: 6,
+    });
+    const before = stateWith(claimed);
+    const after = shiftsReducer(before, {
+      type: 'CREATE_SHIFT',
+      shiftId: 's-new',
+      assignedUserId: 'u-maya',
+      startTime: at(50),
+      endTime: at(56),
+    });
+    expect(after).toBe(before);
+  });
+
+  it('is idempotent on duplicate id', () => {
+    const first = shiftsReducer(stateWith(), {
+      type: 'CREATE_SHIFT',
+      shiftId: 's-new',
+      assignedUserId: 'u-maya',
+      startTime: at(48),
+      endTime: at(54),
+    });
+    const second = shiftsReducer(first, {
+      type: 'CREATE_SHIFT',
+      shiftId: 's-new',
+      assignedUserId: 'u-jules', // different user; should still no-op
+      startTime: at(72),
+      endTime: at(78),
+    });
+    expect(second).toBe(first);
+  });
+
+  it('non-overlapping back-to-back shifts are allowed', () => {
+    const first = makeShift({
+      id: 's-a',
+      assignedUserId: 'u-maya',
+      startOffsetHours: 48,
+      durationHours: 6,
+    });
+    const before = stateWith(first);
+    const after = shiftsReducer(before, {
+      type: 'CREATE_SHIFT',
+      shiftId: 's-b',
+      assignedUserId: 'u-maya',
+      startTime: at(54), // exactly when s-a ends
+      endTime: at(60),
+    });
+    expect(after.shifts['s-b']).toBeDefined();
+    expect(after.shifts['s-b'].status).toBe('Active');
   });
 });
